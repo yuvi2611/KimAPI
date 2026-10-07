@@ -93,6 +93,9 @@ async function get(url, key, attempt = 0) {
 
 /* Short cache so "Load more" / retries don't hammer the retailer. Search pages are never cached. */
 const detailCache = new Map();
+const clicksTotals = new Map();
+/* Clicks only honours page= when its own q=<term>:relevance parameter is present (0-based pages). */
+const clicksUrl = (q, n) => `https://clicks.co.za/search?q=${encodeURIComponent(q + ':relevance')}&text=${encodeURIComponent(q)}&page=${n}&count=12`;
 const DETAIL_TTL = 3 * 60 * 1000;
 async function getDetailPage(url, key) {
   const hit = detailCache.get(url);
@@ -244,7 +247,7 @@ const retailers = {
     label: 'Clicks',
     host: 'clicks.co.za',
     async page(q, n) {
-      const url = `https://clicks.co.za/search?text=${encodeURIComponent(q)}${n ? `&page=${n}` : ''}`;
+      const url = clicksUrl(q, n);
       const html = await get(url, 'clicks');
       const $ = cheerio.load(html);
       const items = [];
@@ -264,8 +267,26 @@ const retailers = {
         });
       });
       const text = clean($.root().text());
-      const m = text.match(/(?:of|showing)\s+([\d,]{1,7})\s+(?:results|products|items)/i) || text.match(/\b([\d,]{1,7})\s+(?:results|products|items)\s+(?:found|for)/i);
-      const total = m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
+      /* Clicks prints no total. Its pager has a "Last" link (0-based page number), so the exact
+         total = lastPage × pageSize + the number of products on that last page. */
+      let total = null;
+      if (n === 0 && items.length) {
+        const lastHref = $('.pagination a').filter((_, e) => /^\s*Last\s*$/i.test($(e).text())).first().attr('href');
+        const lastPage = lastHref ? parseInt((lastHref.match(/[?&]page=(\d+)/) || [])[1], 10) : NaN;
+        if (!lastHref && !$('.pagination a').length) total = items.length;                       // single page of results
+        else if (lastPage === 0) total = items.length;
+        else if (!isNaN(lastPage)) {
+          const key = q.toLowerCase(), hit = clicksTotals.get(key);
+          if (hit && Date.now() - hit.t < DETAIL_TTL) total = hit.total;
+          else {
+            try {
+              const $l = cheerio.load(await get(clicksUrl(q, lastPage), 'clicks'));
+              const onLast = $l('.productBlock').length;
+              if (onLast) { total = lastPage * items.length + onLast; clicksTotals.set(key, { t: Date.now(), total }); }
+            } catch (e) { if (e.kind === 'blocked') throw e; /* otherwise the total stays unknown rather than guessed */ }
+          }
+        }
+      }
       if (!items.length) {
         if (n > 0) return { items: [], total };
         if ($('#searchProducts, .wishplp').length || /no results|did not match|couldn'?t find|0 results/i.test(text)) return { items: [], total: 0 };
