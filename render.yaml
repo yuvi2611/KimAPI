@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: kimi
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: APP_PASSWORD
+        sync: false   # you type this in the Render dashboard; it is never stored in the repo
