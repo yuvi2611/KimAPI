@@ -1,0 +1,171 @@
+/* Breakpoints (tablet <=1100px, phone <=760px) and reduced-motion. Loaded last so it can override components. */
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  .home {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    min-height: 0;
+  }
+  .hero-art {
+    display: none;
+  }
+  .insights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .c-promise {
+    width: 24%;
+  }
+}
+@media (max-width: 760px) {
+  :root {
+    --hdr: 116px;
+  }
+  .appbar-in {
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    gap: 10px;
+  }
+  body[data-view='results'] .appbar-search {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+  }
+  .brand-by {
+    display: none;
+  }
+  .brand-mk {
+    font-size: 19px;
+  }
+  .home {
+    padding: 34px 18px 56px;
+  }
+  .home h1 {
+    font-size: clamp(46px, 15vw, 70px);
+  }
+  .search {
+    height: 56px;
+  }
+  .search-btn {
+    padding: 0 18px;
+  }
+  .kbd {
+    display: none;
+  }
+  .results {
+    padding: 20px 16px 160px;
+  }
+  body[data-view='results'] #export {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 40;
+    width: auto;
+    min-height: 54px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+  }
+  .tile .v {
+    font-size: 30px;
+  }
+  .grid thead {
+    display: none;
+  }
+  .grid,
+  .grid tbody {
+    display: block;
+  }
+  tr.row {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    grid-template-areas: 'sel prod prod' '. price stock' '. chips chips' '. act act';
+    gap: 2px 6px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  tr.row td {
+    border: 0 !important;
+    padding: 0;
+    display: block;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  td.c-sel {
+    grid-area: sel;
+    width: auto;
+  }
+  td.c-prod {
+    grid-area: prod;
+  }
+  td.c-price {
+    grid-area: price;
+    width: auto;
+    margin-top: 6px;
+  }
+  td.c-stock {
+    grid-area: stock;
+    width: auto;
+    margin-top: 8px;
+    text-align: right;
+  }
+  td.c-promise {
+    grid-area: chips;
+    width: auto;
+    margin-top: 8px;
+  }
+  td.c-act {
+    grid-area: act;
+    width: auto;
+    margin-top: 6px;
+  }
+  .acts {
+    justify-content: flex-start;
+    margin-left: -8px;
+  }
+  .psnip {
+    display: none;
+  }
+  tr.detail,
+  tr.detail td {
+    display: block;
+  }
+  tr.detail td {
+    padding: 0 0 18px;
+  }
+  .dgrid {
+    grid-template-columns: 1fr;
+  }
+  tr.skeleton {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 6px 0;
+  }
+  .gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .gprice .price {
+    font-size: 24px;
+  }
+  .gbody {
+    padding: 12px;
+  }
+  .toasts {
+    top: auto;
+    bottom: 84px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+  .drawer {
+    width: 100vw;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

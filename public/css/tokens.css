@@ -1,0 +1,60 @@
+/* Design tokens: colours, radii, fonts. Light theme by default; dark overrides on html[data-theme="dark"].
+   Change the brand look here first. */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f6f4f0;
+  --ink: #121212;
+  --ink-2: #3b3d42;
+  --muted: #6b6f76;
+  --line: #e9e6e1;
+  --line-2: #d8d4cd;
+  --accent: #c8102e;
+  --accent-soft: rgba(200, 16, 46, 0.09);
+  --on-ink: #ffffff;
+  --gold: #b8924a;
+  --ok: #12803a;
+  --err: #b00020;
+  --err-bg: #fff3f4;
+  --err-line: #f1c5cb;
+  --warn-bg: #fff6ec;
+  --warn-ink: #8a3b00;
+  --clicks: #e4002b;
+  --dischem: #00a651;
+  --shadow: 0 1px 2px rgba(20, 16, 10, 0.05), 0 10px 30px rgba(20, 16, 10, 0.07);
+  --shadow-lg: 0 30px 80px rgba(20, 16, 10, 0.18);
+  --glow-a: rgba(200, 16, 46, 0.1);
+  --glow-b: rgba(184, 146, 74, 0.14);
+  --r: 8px;
+  --ring: 0 0 0 3px rgba(200, 16, 46, 0.28);
+  --hdr: 68px;
+  --font: 'Source Sans 3', 'Source Sans Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --serif: 'Cormorant Garamond', 'Playfair Display', Georgia, 'Times New Roman', serif;
+}
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #09090a;
+  --surface: #121214;
+  --surface-2: #19191c;
+  --ink: #f5f2ec;
+  --ink-2: #d0cdc6;
+  --muted: #8f9198;
+  --line: #26262a;
+  --line-2: #37373d;
+  --accent: #ff3d5a;
+  --accent-soft: rgba(255, 61, 90, 0.13);
+  --on-ink: #0b0b0c;
+  --gold: #d7b46a;
+  --ok: #3ddc84;
+  --err: #ff7a8d;
+  --err-bg: #2a1317;
+  --err-line: #5a2530;
+  --warn-bg: #2b1d10;
+  --warn-ink: #fdba74;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 34px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 30px 90px rgba(0, 0, 0, 0.7);
+  --glow-a: rgba(255, 40, 70, 0.2);
+  --glow-b: rgba(215, 180, 106, 0.1);
+  --ring: 0 0 0 3px rgba(255, 61, 90, 0.35);
+}

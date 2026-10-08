@@ -1,0 +1,62 @@
+/* Per-store "Load more" panels with progress bars. */
+/* ---------- Load more ---------- */
+.loadmore {
+  margin-top: 28px;
+  display: grid;
+  gap: 12px;
+  max-width: 600px;
+  margin-inline: auto;
+}
+.lm {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: grid;
+  gap: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.lm-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.lm-top b {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.lm-top b i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.lm-top span {
+  color: var(--muted);
+  font-size: 14.5px;
+  font-variant-numeric: tabular-nums;
+}
+.bar {
+  height: 5px;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.bar > i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--gold));
+  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-radius: 3px;
+}
+.lm .btn {
+  width: 100%;
+}
+.lm-end {
+  text-align: center;
+  color: var(--muted);
+  font-size: 14.5px;
+  padding: 10px;
+}

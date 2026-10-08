@@ -1,13 +1,17 @@
+# Render blueprint. Create the service from this file (New > Blueprint) and it configures itself.
+# Secrets are NOT stored here: you type APP_USER and APP_PASSWORD in the Render dashboard.
 services:
   - type: web
     name: kimi
     runtime: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm ci --omit=dev
     startCommand: node server.js
     healthCheckPath: /healthz
     envVars:
       - key: NODE_VERSION
-        value: 20
+        value: 22
+      - key: APP_USER
+        sync: false # the sign-in email
       - key: APP_PASSWORD
-        sync: false   # you type this in the Render dashboard; it is never stored in the repo
+        sync: false # the sign-in password (use a long, unique one)

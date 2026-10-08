@@ -1,0 +1,108 @@
+/* Buttons (.btn, .iconbtn, .chip-btn) and the theme toggle icons. */
+/* ---------- Buttons ---------- */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: var(--r);
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+  transition:
+    background 0.18s,
+    color 0.18s,
+    border-color 0.18s,
+    transform 0.12s,
+    box-shadow 0.18s;
+}
+.btn:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.btn.primary {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+.btn.primary:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 8px 24px var(--accent-soft);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.btn.ghost {
+  border-color: var(--line-2);
+}
+.btn.sm {
+  min-height: 34px;
+  padding: 0 14px;
+  font-size: 13.5px;
+}
+.btn .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.iconbtn {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  border-radius: var(--r);
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.iconbtn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.chip-btn {
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  border-radius: 99px;
+  padding: 7px 15px;
+  font-size: 14.5px;
+  min-height: 38px;
+  transition: 0.18s;
+}
+.chip-btn:hover {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
+  transform: translateY(-1px);
+}
+.theme .moon {
+  display: none;
+}
+html[data-theme='dark'] .theme .moon {
+  display: block;
+}
+html[data-theme='dark'] .theme .sun {
+  display: none;
+}

@@ -1,0 +1,47 @@
+/* Page footer and toast notifications. */
+/* ---------- Footer + toasts ---------- */
+.sitefoot {
+  border-top: 1px solid var(--line);
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+.sitefoot b {
+  letter-spacing: 0.34em;
+  color: var(--ink);
+  margin-right: 10px;
+}
+.toasts {
+  position: fixed;
+  top: 80px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 90;
+  width: min(430px, calc(100vw - 36px));
+}
+.toast {
+  background: var(--ink);
+  color: var(--on-ink);
+  padding: 13px 16px;
+  border-radius: 10px;
+  font-size: 15px;
+  box-shadow: var(--shadow-lg);
+  animation: rise 0.3s both;
+  border-left: 4px solid var(--gold);
+}
+.toast.ok {
+  border-left-color: #2fbf6a;
+}
+.toast.error {
+  background: #7a0016;
+  color: #fff;
+  border-left-color: #ff6b81;
+}
+.toast.out {
+  opacity: 0;
+  transform: translateX(12px);
+  transition: 0.4s;
+}

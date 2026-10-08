@@ -1,0 +1,53 @@
+/* Results page header (title and status line). */
+/* ---------- Results ---------- */
+.results {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 26px 28px 150px;
+  width: 100%;
+  animation: rise 0.5s both;
+}
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.head h2 {
+  font-family: var(--serif);
+  font-size: clamp(32px, 4vw, 46px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  word-break: break-word;
+}
+.head h2 em {
+  color: var(--accent);
+}
+.meta {
+  color: var(--muted);
+  font-size: 14.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+  margin-top: 6px;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ok);
+  flex: none;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent);
+}
+.dot.busy {
+  background: #e8a200;
+  animation: ping 1.4s infinite;
+}
+@keyframes ping {
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}

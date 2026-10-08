@@ -1,0 +1,66 @@
+/* The search field (used on the home screen and inside the top bar). */
+/* ---------- Search ---------- */
+.search {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r);
+  background: var(--surface);
+  height: 60px;
+  padding-left: 16px;
+  transition:
+    box-shadow 0.2s,
+    border-color 0.2s;
+  box-shadow: var(--shadow);
+}
+.search:focus-within {
+  box-shadow: var(--ring), var(--shadow);
+  border-color: var(--accent);
+}
+.search-ic {
+  flex: none;
+  color: var(--muted);
+}
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 19px;
+  padding: 0 12px;
+  height: 100%;
+}
+.search input::-webkit-search-cancel-button {
+  display: none;
+}
+.search input::placeholder {
+  color: var(--muted);
+  opacity: 0.85;
+}
+.search-btn {
+  height: calc(100% - 10px);
+  margin-right: 5px;
+  min-height: 0;
+  padding: 0 26px;
+}
+.kbd {
+  font-size: 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  padding: 1px 7px;
+  color: var(--muted);
+  margin-right: 8px;
+  line-height: 1.6;
+}
+.appbar .search {
+  height: 46px;
+  box-shadow: none;
+}
+.appbar .search input {
+  font-size: 16px;
+}
+.appbar .search-btn,
+.appbar .kbd {
+  display: none;
+}

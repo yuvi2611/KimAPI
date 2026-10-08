@@ -1,0 +1,4 @@
+# Normalise line endings so Windows and Mac developers get clean diffs.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.xlsx binary
