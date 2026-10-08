@@ -1,28 +1,106 @@
+const fs = require('fs');
+const path = require('path');
+/* Load .env if present (never committed). Real environment variables win. */
+try {
+  for (const line of fs.readFileSync(path.join(__dirname, '.env'), 'utf8').split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/i);
+    if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^(["'])(.*)\1$/, '$2');
+  }
+} catch { /* no .env: fine */ }
 const express = require('express');
 const cheerio = require('cheerio');
 const ExcelJS = require('exceljs');
-const path = require('path');
 
 const app = express();
 app.disable('x-powered-by');
 
-/* Health check for the host (no password), then optional shared-password gate.
-   Set APP_PASSWORD in the host's environment settings to turn the gate on. Unset = open (local use). */
-app.get('/healthz', (req, res) => res.type('text').send('ok'));
+/* =====================================================================
+   Sign-in. One user, configured only through environment variables
+   (APP_USER, APP_PASSWORD, optional SESSION_SECRET). Nothing is stored in the repo.
+   Unset APP_PASSWORD = no sign-in (handy for local development).
+   ===================================================================== */
 const crypto = require('crypto');
-const APP_PASSWORD = process.env.APP_PASSWORD || '';
-if (APP_PASSWORD) {
-  const same = (a, b) => { const x = crypto.createHash('sha256').update(a).digest(), y = crypto.createHash('sha256').update(b).digest(); return crypto.timingSafeEqual(x, y); };
-  app.use((req, res, next) => {
-    const given = Buffer.from((req.headers.authorization || '').replace(/^Basic /i, ''), 'base64').toString();
-    const pass = given.slice(given.indexOf(':') + 1);          // any username is accepted
-    if (given.includes(':') && same(pass, APP_PASSWORD)) return next();
-    res.set('WWW-Authenticate', 'Basic realm="Kimi", charset="UTF-8"').status(401).send('Password required.');
-  });
-}
+if (process.env.RENDER || process.env.TRUST_PROXY) app.set('trust proxy', 1);   // real client IP + https behind the host's proxy
 
+const APP_USER = (process.env.APP_USER || '').trim().toLowerCase();
+const APP_PASSWORD = process.env.APP_PASSWORD || '';
+const AUTH_ON = !!APP_PASSWORD;
+const COOKIE = 'kimi_session';
+const SECRET = process.env.SESSION_SECRET || crypto.createHash('sha256').update(`kimi-session:${APP_USER}:${APP_PASSWORD}`).digest('hex');
+const sha = (s) => crypto.createHash('sha256').update(String(s)).digest();
+const safeEq = (a, b) => crypto.timingSafeEqual(sha(a), sha(b));
+const mac = (body) => crypto.createHmac('sha256', SECRET).update(body).digest('base64url');
+const sign = (payload) => { const body = Buffer.from(JSON.stringify(payload)).toString('base64url'); return `${body}.${mac(body)}`; };
+function verify(tok) {
+  const [body, sig] = String(tok || '').split('.');
+  if (!body || !sig) return null;
+  const want = mac(body);
+  if (sig.length !== want.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want))) return null;
+  try { const p = JSON.parse(Buffer.from(body, 'base64url').toString()); return p.exp > Date.now() ? p : null; } catch { return null; }
+}
+const readCookies = (req) => Object.fromEntries((req.headers.cookie || '').split(';').map((c) => c.trim()).filter(Boolean).map((c) => { const i = c.indexOf('='); return [c.slice(0, i), c.slice(i + 1)]; }));
+const sessionOf = (req) => verify(readCookies(req)[COOKIE]);
+const safeNext = (n) => (typeof n === 'string' && /^\/(?![/\\])/.test(n) && !n.startsWith('/login') && !n.startsWith('/api/') ? n : '/');
+const setCookie = (req, res, value, maxAgeSec) => res.append('Set-Cookie', `${COOKIE}=${value}; HttpOnly; SameSite=Lax; Path=/${req.secure ? '; Secure' : ''}${maxAgeSec != null ? `; Max-Age=${maxAgeSec}` : ''}`);
+
+/* Brute-force guard: 5 wrong attempts per address in 15 minutes locks that address for 15 minutes. */
+const tries = new Map(), MAX_TRIES = 5, WINDOW_MS = 15 * 60 * 1000;
+const lockedFor = (ip) => { const t = tries.get(ip); return t && t.lockedUntil > Date.now() ? Math.ceil((t.lockedUntil - Date.now()) / 1000) : 0; };
+function noteFailure(ip) {
+  const now = Date.now(); let t = tries.get(ip);
+  if (!t || now - t.first > WINDOW_MS) t = { n: 0, first: now, lockedUntil: 0 };
+  t.n++; if (t.n >= MAX_TRIES) t.lockedUntil = now + WINDOW_MS;
+  tries.set(ip, t); return MAX_TRIES - t.n;
+}
+setInterval(() => { const now = Date.now(); for (const [ip, t] of tries) if (now - t.first > WINDOW_MS && t.lockedUntil < now) tries.delete(ip); }, 60 * 1000).unref();
+
+app.get('/healthz', (req, res) => res.type('text').send('ok'));
 app.use(express.json({ limit: '8mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+
+const PUBLIC_DIR = path.join(__dirname, 'public');
+app.get(['/login.js', '/login.css', '/styles.css'], (req, res) => res.sendFile(path.join(PUBLIC_DIR, req.path)));
+app.get('/login', (req, res) => {
+  if (!AUTH_ON || sessionOf(req)) return res.redirect(safeNext(req.query.next));
+  res.set('Cache-Control', 'no-store').sendFile(path.join(PUBLIC_DIR, 'login.html'));
+});
+
+const sameOrigin = (req) => { const o = req.headers.origin; if (!o) return true; try { return new URL(o).host === req.headers.host; } catch { return false; } };
+app.post('/api/login', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  if (!AUTH_ON) return res.json({ ok: true, next: '/' });
+  if (!sameOrigin(req)) return res.status(403).json({ error: 'Request blocked.' });
+  const wait = lockedFor(req.ip);
+  if (wait) return res.status(429).set('Retry-After', String(wait)).json({ error: 'Too many attempts.', retryAfter: wait });
+  const user = String(req.body?.username || '').trim().toLowerCase(), pass = String(req.body?.password || '');
+  const userOk = !APP_USER || safeEq(user, APP_USER), passOk = safeEq(pass, APP_PASSWORD);   // both always evaluated
+  if (!(userOk && passOk)) {
+    await sleep(500);                                                                        // slows guessing
+    const left = noteFailure(req.ip);
+    if (left <= 0) return res.status(429).set('Retry-After', String(WINDOW_MS / 1000)).json({ error: 'Too many attempts.', retryAfter: WINDOW_MS / 1000 });
+    return res.status(401).json({ error: 'Incorrect email or password.', attemptsLeft: left });
+  }
+  tries.delete(req.ip);
+  const remember = !!req.body?.remember, ttl = remember ? 30 * 24 * 3600 : 12 * 3600;
+  setCookie(req, res, sign({ u: APP_USER || user || 'user', exp: Date.now() + ttl * 1000 }), remember ? ttl : null);
+  res.json({ ok: true, next: safeNext(req.body?.next) });
+});
+app.post('/api/logout', (req, res) => {
+  if (!sameOrigin(req)) return res.status(403).json({ error: 'Request blocked.' });
+  setCookie(req, res, '', 0); res.json({ ok: true });
+});
+
+/* Everything below this line needs a session. */
+app.use((req, res, next) => {
+  if (!AUTH_ON) return next();
+  const s = sessionOf(req);
+  if (s) { req.user = s.u; return next(); }
+  if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Please sign in again.', login: true });
+  res.redirect('/login?next=' + encodeURIComponent(req.originalUrl));
+});
+app.get('/api/me', (req, res) => res.set('Cache-Control', 'no-store').json({ auth: AUTH_ON, user: req.user || null }));
+app.use(express.static(PUBLIC_DIR));
+
+
 
 /* =====================================================================
    Helpers
@@ -482,7 +560,7 @@ app.post('/api/export', async (req, res) => {
   if (rows.length > 2000) return res.status(400).json({ error: 'Too many products for one export (limit 2000).' });
   try {
     const wb = new ExcelJS.Workbook();
-    wb.creator = 'Shelf Scout';
+    wb.creator = 'Kimi';
     const groups = {};
     for (const p of rows) (groups[String(p.retailer || 'Products')] ||= []).push(p);
 
@@ -549,7 +627,7 @@ process.on('unhandledRejection', (e) => console.error('unhandledRejection:', e))
 process.on('uncaughtException', (e) => console.error('uncaughtException:', e));
 
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => console.log(`Shelf Scout running → http://localhost:${PORT}`));
+const server = app.listen(PORT, () => console.log(`Kimi running → http://localhost:${PORT}`));
 server.on('error', (e) => {
   console.error(e.code === 'EADDRINUSE' ? `Port ${PORT} is already in use. Close the other Shelf Scout window, or run with PORT=3001.` : e);
   process.exit(1);

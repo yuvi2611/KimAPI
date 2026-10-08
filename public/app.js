@@ -128,7 +128,7 @@ function run(keys) {
   es.addEventListener('done', () => { end(); state.finishedAt = clock(); schedule(); });
   es.onerror = () => {
     if (finished) return;
-    end();
+    end(); checkSession();
     keys.forEach((k) => { const st = state.src[k]; if (['searching', 'found'].includes(st.state)) Object.assign(st, { state: 'error', message: 'The connection dropped before this store finished. What loaded is kept. Try again to continue.' }); });
     toast('Connection lost while searching. What loaded is kept.', 'error');
     state.finishedAt = clock(); schedule();
@@ -447,7 +447,7 @@ async function retryProduct(p, btn) {
   if (btn) { btn.disabled = true; btn.textContent = 'Retrying…'; }
   try {
     const qs = new URLSearchParams({ source: p.source, url: p.url, name: p.name, price: p.price ?? '', image: p.image || '' });
-    const r = await fetch('/api/product?' + qs); const j = await r.json();
+    const r = await fetch('/api/product?' + qs); if (r.status === 401) return toLogin(); const j = await r.json();
     if (!r.ok) throw new Error(j.error || 'Retry failed');
     Object.assign(p, j, { _o: p._o, _v: p._v + 1 });
     j.detailError ? toast('Still couldn’t load the details. Try again in a moment.', 'error') : toast('Details loaded.', 'ok');
@@ -513,6 +513,7 @@ $('#export').addEventListener('click', async () => {
   let ok = false;
   try {
     const r = await fetch('/api/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ products: rows }) });
+    if (r.status === 401) return toLogin();
     if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || `Export failed (HTTP ${r.status}).`); }
     const url = URL.createObjectURL(await r.blob());
     const a = Object.assign(document.createElement('a'), { href: url, download: `kimi-${state.q.replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'products'}.xlsx` });
@@ -547,6 +548,28 @@ function typer() {
   tick();
 }
 
+/* ------------------------------ session ------------------------------ */
+const toLogin = () => { location.href = '/login?next=' + encodeURIComponent(location.pathname + location.search); };
+async function checkSession() {
+  try {
+    const r = await fetch('/api/me', { cache: 'no-store' });
+    if (r.status === 401) return toLogin();
+    const me = await r.json();
+    if (me.auth && me.user) {
+      $('#userMenu').hidden = false; $('#meEmail').textContent = me.user; $('#avatarLetter').textContent = me.user[0].toUpperCase();
+    }
+  } catch { /* offline: the app reports connection problems where they matter */ }
+}
+const pop = $('#pop'), avatar = $('#avatar');
+const setPop = (open) => { pop.hidden = !open; avatar.setAttribute('aria-expanded', String(open)); };
+avatar.addEventListener('click', (e) => { e.stopPropagation(); setPop(pop.hidden); });
+document.addEventListener('click', (e) => { if (!pop.hidden && !e.target.closest('#userMenu')) setPop(false); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) { setPop(false); avatar.focus(); } });
+$('#logout').addEventListener('click', async () => {
+  try { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); } catch { /* sign-out cookie may linger; the server still expires it */ }
+  location.href = '/login';
+});
+
 /* ------------------------------ boot ------------------------------ */
 (function boot() {
   const pf = prefs.read(), url = new URLSearchParams(location.search);
@@ -557,6 +580,6 @@ function typer() {
   document.querySelectorAll('.store-toggle').forEach((b) => b.setAttribute('aria-pressed', String(state.stores.includes(b.dataset.store))));
   if (pf.view === 'gallery') { state.view = 'gallery'; $('#vList').setAttribute('aria-pressed', 'false'); $('#vGrid').setAttribute('aria-pressed', 'true'); }
   $('meta[name=theme-color]').content = document.documentElement.dataset.theme === 'dark' ? '#09090a' : '#ffffff';
-  renderRecent(); typer();
+  renderRecent(); typer(); checkSession();
   if (url.get('q')) search(url.get('q'), { push: false }); else input.focus({ preventScroll: true });
 })();

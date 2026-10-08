@@ -10,9 +10,19 @@ Double-click `start.bat`, or:
 
 Open http://localhost:3000
 
-## Settings
-- `APP_PASSWORD` (optional): when set, the site asks for this password (any username). Leave unset for local use.
-- `PORT` (optional): defaults to 3000.
+## Sign-in
+One user, set through environment variables (nothing is stored in the repo):
+
+| Name | Purpose |
+|---|---|
+| `APP_USER` | The sign-in email |
+| `APP_PASSWORD` | The password. If unset, the site has no sign-in (local development) |
+| `SESSION_SECRET` | Optional. Any long random string |
+
+Locally: copy `.env.example` to `.env` and fill it in (`.env` is git-ignored).
+On Render: add the same names under **Environment**, then redeploy.
+
+Five wrong attempts lock that address out for 15 minutes.
 
 ## Notes
 Retailer pages are read live. Anything a retailer doesn't state is exported as "Not found".
